@@ -1,0 +1,41 @@
+# Core FastAPI dependencies
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+python-multipart==0.0.6
+
+# AI and ML dependencies
+google-generativeai==0.3.2
+spacy==3.7.2
+transformers==4.36.0
+torch==2.1.1
+numpy==1.24.4
+pandas==2.1.4
+
+# Computer Vision
+opencv-python==4.8.1.78
+mediapipe==0.10.0
+
+# Audio Processing
+librosa==0.10.1
+pydub==0.25.1
+speechrecognition==3.8.1
+
+# Database
+asyncpg==0.29.0
+sqlalchemy==2.0.23
+alembic==1.13.0
+
+# Utilities
+python-dotenv==1.0.0
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+aiofiles==23.2.1
+
+# Development and Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+black==23.11.0
+flake8==6.1.0
+mypy==1.7.1
