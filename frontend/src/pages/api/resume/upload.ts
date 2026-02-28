@@ -1,15 +1,20 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextRequest, NextResponse } from 'next/server';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export const config = {
+  runtime: 'edge',
+};
+
+export default async function handler(req: NextRequest) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
   }
 
   try {
-    const { fileContent, filename, fileType } = req.body;
+    const body = await req.json();
+    const { fileContent, filename, fileType } = body;
     
     if (!fileContent || !filename) {
-      return res.status(400).json({ error: 'File content and filename are required' });
+      return NextResponse.json({ error: 'File content and filename are required' }, { status: 400 });
     }
 
     // For Vercel deployment, you would typically use:
@@ -25,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     const fileUrl = `https://your-storage-bucket.s3.amazonaws.com/${filename}`;
     
-    res.status(200).json({ 
+    return NextResponse.json({ 
       success: true,
       fileUrl: fileUrl,
       filename: filename,
@@ -33,17 +38,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (error) {
     console.error('File upload error:', error);
-    res.status(500).json({ 
+    return NextResponse.json({ 
       error: 'Upload failed',
       message: error instanceof Error ? error.message : 'Unknown error'
-    });
+    }, { status: 500 });
   }
 }
-
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '10mb',
-    },
-  },
-};

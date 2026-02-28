@@ -1,39 +1,57 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { NextRequest, NextResponse } from 'next/server';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export const config = {
+  runtime: 'edge',
+};
+
+export default async function handler(req: NextRequest) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
   }
 
   try {
-    const { resumeText } = req.body;
+    const body = await req.json();
+    const { resumeText } = body;
     
     if (!resumeText) {
-      return res.status(400).json({ error: 'Resume text is required' });
+      return NextResponse.json({ error: 'Resume text is required' }, { status: 400 });
     }
 
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
-    
-    const prompt = `Analyze this resume and extract key information:
-    
-    Resume Content:
-    ${resumeText}
-    
-    Please provide a structured analysis with the following sections:
-    1. Professional Summary
-    2. Key Skills (technical and soft skills)
-    3. Work Experience highlights
-    4. Education and certifications
-    5. Notable achievements
-    6. Areas for improvement
-    
-    Format the response as JSON with these sections.`;
-    
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    // For Vercel Edge Runtime, we need to use fetch instead of Google's library
+    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.GEMINI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: `Analyze this resume and extract key information:
+            
+            Resume Content:
+            ${resumeText}
+            
+            Please provide a structured analysis with the following sections:
+            1. Professional Summary
+            2. Key Skills (technical and soft skills)
+            3. Work Experience highlights
+            4. Education and certifications
+            5. Notable achievements
+            6. Areas for improvement
+            
+            Format the response as JSON with these sections.`
+          }]
+        }]
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const text = data.candidates[0].content.parts[0].text;
     
     // Parse the JSON response
     let analysis;
@@ -49,24 +67,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
     
-    res.status(200).json({ 
+    return NextResponse.json({ 
       success: true,
       analysis: analysis,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
     console.error('Resume analysis error:', error);
-    res.status(500).json({ 
+    return NextResponse.json({ 
       error: 'Analysis failed',
       message: error instanceof Error ? error.message : 'Unknown error'
-    });
+    }, { status: 500 });
   }
 }
-
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '10mb',
-    },
-  },
-};

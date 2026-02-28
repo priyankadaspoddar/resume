@@ -1,0 +1,34 @@
+{
+  "version": 2,
+  "name": "resume-interview-system",
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "functions": {
+    "src/pages/api/resume/analyze.ts": {
+      "runtime": "edge"
+    },
+    "src/pages/api/resume/upload.ts": {
+      "runtime": "edge"
+    },
+    "src/pages/api/interview/coach.ts": {
+      "runtime": "edge"
+    }
+  }
+}
